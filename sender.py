@@ -12,5 +12,5 @@ class TwitterSender():
 
 if __name__ == "__main__":
     t = TwitterSender(ACCESS_TOKEN, ACCESS_SECRET, CONSUMER_KEY, CONSUMER_SECRET)
-    t.send_message('twit_reva', '!!')
+    t.send_message('@twit_reva', '!!')
 
