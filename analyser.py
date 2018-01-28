@@ -50,11 +50,11 @@ class Analyser():
                 # don't consider
                 tweets.append(tweet["name"])
 
-analyser = Analyser(accessKey)
-documents = { 'documents': [
-    { 'id': '1', 'language': 'en', 'text': 'I am a trash. I dont deserve anything.' },
-    { 'id': '2', 'language': 'en', 'text': 'Just because you are trash does not mean you cannot do great things. It is called garbage can, not garbage cant.' }
-]}
+#analyser = Analyser(accessKey)
+#documents = { 'documents': [
+#    { 'id': '1', 'language': 'en', 'text': 'I am a trash. I dont deserve anything.' },
+#    { 'id': '2', 'language': 'en', 'text': 'Just because you are trash does not mean you cannot do great things. It is called garbage can, not garbage cant.' }
+#]}
 
-print(analyser.getSentiment(documents))
-print(analyser.getKeyPhrases(documents))
+#print(analyser.getSentiment(documents))
+#print(analyser.getKeyPhrases(documents))

@@ -1,7 +1,9 @@
 import json
+import time
+from analyser import Analyser
 
 from twitter import Twitter, OAuth, TwitterHTTPError, TwitterStream
-from config import ACCESS_TOKEN, ACCESS_SECRET, CONSUMER_KEY, CONSUMER_SECRET
+from config import ACCESS_TOKEN, ACCESS_SECRET, CONSUMER_KEY, CONSUMER_SECRET, TA_ACCESS_KEY
 
 twitter = Twitter(auth=OAuth(ACCESS_TOKEN, ACCESS_SECRET, CONSUMER_KEY, CONSUMER_SECRET))
 
@@ -10,6 +12,7 @@ class TwitterReceiver():
     def __init__(self, ACCESS_TOKEN, ACCESS_SECRET, CONSUMER_KEY, CONSUMER_SECRET):
         oAuth = OAuth(ACCESS_TOKEN, ACCESS_SECRET, CONSUMER_KEY, CONSUMER_SECRET)
         self.twitter_stream = TwitterStream(auth=oAuth)
+        self.analyser = Analyser(TA_ACCESS_KEY)
 
     def receive_tweets(self, nb_items):
         # Read data from json
@@ -26,8 +29,10 @@ class TwitterReceiver():
         f.close()
 
         # Set flag isEmpty
-        isEmpty = True if json_data == {} else False 
+        isEmpty = json_data == {}
 
+        if isEmpty:
+            json_data["documents"] = []
         # Set an iterator which iterates all visible tweets on Twitter
         iterator = self.twitter_stream.statuses.sample()
 
@@ -42,9 +47,10 @@ class TwitterReceiver():
                 continue
             else:
                 if not isEmpty:
-                    json_data[tweet["user"]["name"]] = {"user": tweet["user"], "text": tweet["text"]}
+                        print(json_data["documents"])   
+                        json_data["documents"].append({"id": tweet["user"]["screen_name"], "text": tweet["text"]})
                 else:
-                    json_data[tweet["user"]["name"]] = {"user": tweet["user"], "text": tweet["text"]}
+                        json_data["documents"].append({"id": tweet["user"]["screen_name"], "text": tweet["text"]})
 
         with open("data.json", 'w') as f:
             json.dump(json_data, f, indent=2, ensure_ascii=False)
@@ -61,8 +67,28 @@ class TwitterReceiver():
         with open('data.json', 'w') as f:
             data = json.dump(data, f, ensure_ascii=False)
 
+
 if __name__ == "__main__":
     t = TwitterReceiver(ACCESS_TOKEN, ACCESS_SECRET, CONSUMER_KEY, CONSUMER_SECRET)
-    t.receive_tweets(5)
-    #t.pop_sent_user("Patrick")
+    while (True):
+
+        t.receive_tweets(10)
+        with open('data.json', 'r') as f:
+            data = json.load(f)
+            sentiment = json.loads(t.analyser.getSentiment(data))
+            keyphrases = json.loads(t.analyser.getKeyPhrases(data))
+            print(sentiment['documents'])
+            print(keyphrases['documents'])
+
+            constructed = {'documents': []}
+
+            for i in range(len(sentiment['documents'])):
+                constructed['documents'].append(
+                    dict(list(sentiment['documents'][i].items()) + list(keyphrases['documents'][i].items())))
+
+            print(constructed)
+            time.sleep(10)
+
+
+
 
