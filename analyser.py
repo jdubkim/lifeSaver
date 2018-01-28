@@ -35,20 +35,14 @@ class Analyser():
     def convertToDecision(self, documents):
 
         tweets = []
-
         for tweet in documents["documents"]:
-            #if tweet["score"] < 0.02:
-                # serious
+            print(tweet)
 
-            #elif tweet["score"] < 0.1:
-                #little bit serious
+            # when the tweet has the strongly negative sentiment
+            if tweet["score"] < .1:
+                tweets.append(tweet['name'])
 
-            if tweet["score"] < 0.5:
-                # good
-                tweets.append(tweet["name"])
-            else:
-                # don't consider
-                tweets.append(tweet["name"])
+        return tweets
 
 #analyser = Analyser(accessKey)
 #documents = { 'documents': [
@@ -58,3 +52,4 @@ class Analyser():
 
 #print(analyser.getSentiment(documents))
 #print(analyser.getKeyPhrases(documents))
+

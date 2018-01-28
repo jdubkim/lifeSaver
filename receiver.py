@@ -1,4 +1,5 @@
 import json
+import sys
 import time
 from analyser import Analyser
 
@@ -32,7 +33,8 @@ class TwitterReceiver():
         isEmpty = json_data == {}
 
         if isEmpty:
-            json_data["documents"] = []
+            json_data['documents'] = []
+
         # Set an iterator which iterates all visible tweets on Twitter
         iterator = self.twitter_stream.statuses.sample()
 
@@ -41,19 +43,46 @@ class TwitterReceiver():
             if idx == nb_items:
                 break
             elif 'created_at' not in tweet:
-                print('The signal is tweet deletion')
+                #print('The signal is tweet deletion')
                 continue
             elif not tweet['user']['lang'] == 'en':
                 continue
             else:
-                if not isEmpty:
-                        print(json_data["documents"])   
-                        json_data["documents"].append({"id": tweet["user"]["screen_name"], "text": tweet["text"]})
+                username = tweet['user']['screen_name']
+                text = tweet['text']
+                new_data = {'id':username, 'text':text}
+
+                # assume that data.json always contains data
+
+                # check if the user already exists in the data
+
+                documents = json_data['documents']
+                if self.is_user_there(username, documents):
+                    self.insert_data_into_existing(username, text, documents)
                 else:
-                        json_data["documents"].append({"id": tweet["user"]["screen_name"], "text": tweet["text"]})
+                    documents.append(new_data)
+
+            #else:
+            #    if not isEmpty:
+            #            print(json_data["documents"])   
+            #            json_data["documents"].append({"id": tweet["user"]["screen_name"], "text": tweet["text"]})
+            #    else:
+            #            json_data["documents"].append({"id": tweet["user"]["screen_name"], "text": tweet["text"]})
 
         with open("data.json", 'w') as f:
-            json.dump(json_data, f, indent=2, ensure_ascii=False)
+            json.dump(json_data, f, indent=4, ensure_ascii=False)
+
+    # check if the user exists in the documents
+    def is_user_there(self, username, documents):
+        for user in documents:
+            if user['id'] == username:
+                return True
+        return False
+
+    def insert_data_into_existing(self, username, text, documents):
+        for user in documents:
+            if user['id'] == username:
+                user['text'] = user['text'] + ', ' + text
 
     def pop_sent_user(self, username):
 
@@ -67,28 +96,23 @@ class TwitterReceiver():
         with open('data.json', 'w') as f:
             data = json.dump(data, f, ensure_ascii=False)
 
-
 if __name__ == "__main__":
     t = TwitterReceiver(ACCESS_TOKEN, ACCESS_SECRET, CONSUMER_KEY, CONSUMER_SECRET)
-    while (True):
+    #while True:
+    
+    t.receive_tweets(5)
+    with open('data.json', 'r') as f:
+        data = json.load(f)
+        sentiment = json.loads(t.analyser.getSentiment(data))
+        keyphrases = json.loads(t.analyser.getKeyPhrases(data))
+        print(sentiment['documents'])
+        print(keyphrases['documents'])
 
-        t.receive_tweets(10)
-        with open('data.json', 'r') as f:
-            data = json.load(f)
-            sentiment = json.loads(t.analyser.getSentiment(data))
-            keyphrases = json.loads(t.analyser.getKeyPhrases(data))
-            print(sentiment['documents'])
-            print(keyphrases['documents'])
+        constructed = {'documents': []}
 
-            constructed = {'documents': []}
+        for i in range(len(sentiment['documents'])):
+            constructed['documents'].append(dict(list(sentiment['documents'][i].items()) + list(keyphrases['documents'][i].items())))
 
-            for i in range(len(sentiment['documents'])):
-                constructed['documents'].append(
-                    dict(list(sentiment['documents'][i].items()) + list(keyphrases['documents'][i].items())))
-
-            print(constructed)
-            time.sleep(10)
-
-
-
+        print(constructed)
+        time.sleep(1)
 
